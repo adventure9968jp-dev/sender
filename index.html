@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手機麥克風 (發送端)</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body {
+            background-color: #222;
+            color: white;
+            font-family: sans-serif;
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        input {
+            padding: 10px;
+            font-size: 1.2rem;
+            width: 80%;
+            text-align: center;
+        }
+        button {
+            padding: 15px;
+            font-size: 1.2rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        button.recording {
+            background: #dc3545; /* 紅色代表錄音中 */
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        #log {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-top: 20px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <h2>春酒無線麥克風</h2>
+    
+    <div>
+        <label>輸入筆電上的 ID:</label><br>
+        <input type="text" id="target-id" placeholder="例如: 8a2b-...">
+    </div>
+
+    <button id="connect-btn" onclick="connectToLaptop()">1. 連接筆電</button>
+    
+    <button id="mic-btn" onclick="toggleMic()" disabled>2. 開始收音 (Start)</button>
+
+    <div id="current-text" style="font-size: 1.5rem; color: #FFD700; min-height: 50px;">...</div>
+    <div id="log">系統準備就緒</div>
+
+    <script>
+        const peer = new Peer();
+        let conn;
+        let recognition;
+        let isRecording = false;
+
+        // 連接到筆電
+        function connectToLaptop() {
+            const targetId = document.getElementById('target-id').value;
+            if (!targetId) return alert("請輸入 ID");
+
+            document.getElementById('log').innerText = "正在連接...";
+            conn = peer.connect(targetId);
+
+            conn.on('open', () => {
+                document.getElementById('log').innerText = "✅ 已連接到筆電！";
+                document.getElementById('connect-btn').style.display = 'none'; // 隱藏連接按鈕
+                document.getElementById('mic-btn').disabled = false; // 啟用麥克風按鈕
+                document.getElementById('mic-btn').style.background = '#28a745'; // 變綠色
+            });
+
+            conn.on('error', (err) => alert("連線錯誤: " + err));
+        }
+
+        // 設定語音辨識
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'zh-TW';
+
+            recognition.onresult = (event) => {
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                        // 傳送最終結果給筆電
+                        if (conn && conn.open) {
+                            conn.send({ type: 'text', content: finalTranscript });
+                        }
+                        document.getElementById('current-text').innerText = finalTranscript;
+                    } else {
+                        // (選擇性) 傳送即時結果，看您是否希望筆電也即時跳動
+                         document.getElementById('current-text').innerText = event.results[i][0].transcript;
+                    }
+                }
+            };
+
+            // iOS Safari 防斷線機制
+            recognition.onend = () => {
+                if (isRecording) {
+                    console.log("重啟錄音...");
+                    recognition.start();
+                }
+            };
+        } else {
+            alert("此瀏覽器不支援語音辨識 (請使用 Chrome 或 Safari)");
+        }
+
+        // 切換麥克風
+        function toggleMic() {
+            if (!isRecording) {
+                recognition.start();
+                isRecording = true;
+                document.getElementById('mic-btn').innerText = "🔴 收音中 (點擊停止)";
+                document.getElementById('mic-btn').classList.add('recording');
+            } else {
+                recognition.stop();
+                isRecording = false;
+                document.getElementById('mic-btn').innerText = "2. 開始收音 (Start)";
+                document.getElementById('mic-btn').classList.remove('recording');
+            }
+        }
+    </script>
+</body>
+</html>

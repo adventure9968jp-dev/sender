@@ -1,142 +1,227 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>手機麥克風 (發送端)</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026 春酒點收系統 - 名單更新版</title>
     <style>
-        body {
-            background-color: #222;
-            color: white;
-            font-family: sans-serif;
-            text-align: center;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+        :root {
+            --bg: #0f111a; --card: #1a1c2c; --text: #e0e0e0;
+            --p1: #ff3e3e; --p2: #ff9f43; --p3: #feca57; --p4: #48dbfb;
+            --p5-1: #1dd1a1; --p5-2: #54a0ff; --p5-3: #a55eea; --p5-4: #ff9ff3;
+            --danger: #d63031;
         }
-        input {
-            padding: 10px;
-            font-size: 1.2rem;
-            width: 80%;
-            text-align: center;
+
+        * { -webkit-user-select: none; -webkit-touch-callout: none; outline: none; box-sizing: border-box; }
+        input#searchBox { -webkit-user-select: text !important; -webkit-touch-callout: default !important; }
+
+        body { 
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; 
+            background: var(--bg); color: var(--text); margin: 0; 
+            padding-top: 450px; padding-bottom: 50px; -webkit-overflow-scrolling: touch; 
         }
-        button {
-            padding: 15px;
-            font-size: 1.2rem;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
+        
+        .header-fixed { 
+            position: fixed; top: 0; left: 0; right: 0; 
+            background: rgba(15, 17, 26, 0.98); border-bottom: 2px solid #333; 
+            z-index: 1000; padding: 15px 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
         }
-        button.recording {
-            background: #dc3545; /* 紅色代表錄音中 */
-            animation: pulse 1.5s infinite;
+        
+        .prize-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 1000px; margin: 0 auto 12px; }
+        .control-group { display: flex; flex-direction: column; }
+        
+        .btn-p { 
+            width: 100%; border: 2px solid #444; padding: 15px 0; border-radius: 8px 8px 0 0; 
+            cursor: pointer; background: #2a2d3e; color: #fff; font-weight: bold; 
+            font-size: 1.1em; transition: 0.3s; -webkit-appearance: none;
         }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+
+        .btn-clear { 
+            width: 100%; border: 1px solid #444; border-top: none; padding: 8px 0; 
+            border-radius: 0 0 8px 8px; cursor: pointer; background: #1a1c2c; 
+            color: #888; font-size: 0.9rem; font-weight: bold; text-align: center;
+            transition: 0.2s;
         }
-        #log {
-            font-size: 0.9rem;
-            color: #ccc;
-            margin-top: 20px;
-            word-break: break-all;
+
+        .active-p1 { background: var(--p1) !important; border-color: #fff !important; color: #fff !important; }
+        .active-p2 { background: var(--p2) !important; border-color: #fff !important; color: #fff !important; }
+        .active-p3 { background: var(--p3) !important; border-color: #fff !important; color: #000 !important; }
+        .active-p4 { background: var(--p4) !important; border-color: #fff !important; color: #000 !important; }
+        .active-p5-1 { background: var(--p5-1) !important; border-color: #fff !important; color: #000 !important; }
+        .active-p5-2 { background: var(--p5-2) !important; border-color: #fff !important; color: #fff !important; }
+        .active-p5-3 { background: var(--p5-3) !important; border-color: #fff !important; color: #fff !important; }
+        .active-p5-4 { background: var(--p5-4) !important; border-color: #fff !important; color: #000 !important; }
+
+        .btn-all-clear { 
+            width: 100%; max-width: 600px; display: block; margin: 0 auto 12px; 
+            padding: 10px; border-radius: 8px; border: 2px solid var(--danger); 
+            background: transparent; color: var(--danger); font-weight: bold; font-size: 1rem; 
         }
+
+        .search-area { text-align: center; margin-bottom: 10px; }
+        #searchBox { 
+            width: 90%; max-width: 600px; padding: 15px; border-radius: 30px; 
+            border: 2px solid #555; background: #222; color: #fff; text-align: center; 
+            font-size: 1.2rem; -webkit-appearance: none;
+        }
+        
+        .stats-bar { 
+            text-align: center; font-size: 1.2rem; color: #bbb; padding: 10px; 
+            background: rgba(0,0,0,0.3); border-radius: 8px; max-width: 1000px; margin: 0 auto; 
+        }
+
+        .container { max-width: 1600px; margin: 0 auto; padding: 0 20px; }
+        .dept-title { border-left: 5px solid #555; padding-left: 15px; margin: 35px 0 15px; color: #fff; font-size: 1.2rem; font-weight: bold; }
+        .name-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 12px; list-style: none; padding: 0; }
+
+        @media (max-width: 1024px) { .name-grid { grid-template-columns: repeat(5, 1fr); } body { padding-top: 480px; } }
+        @media (max-width: 768px) { .name-grid { grid-template-columns: repeat(4, 1fr); } body { padding-top: 500px; } }
+
+        .name-card { 
+            background: var(--card); border: 1px solid #333; padding: 25px 5px; 
+            text-align: center; border-radius: 10px; cursor: pointer; position: relative; 
+            display: flex; flex-direction: column; justify-content: center; min-height: 95px;
+        }
+
+        .name-text { font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; }
+        
+        .win-card { font-weight: bold; border-color: #fff !important; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transform: scale(1.02); }
+        .win-p1 { background: var(--p1) !important; color: #fff; } 
+        .win-p2 { background: var(--p2) !important; color: #fff; }
+        .win-p3 { background: var(--p3) !important; color: #000; } 
+        .win-p4 { background: var(--p4) !important; color: #000; }
+        .win-p5-1 { background: var(--p5-1) !important; color: #000; } 
+        .win-p5-2 { background: var(--p5-2) !important; color: #fff; }
+        .win-p5-3 { background: var(--p5-3) !important; color: #fff; } 
+        .win-p5-4 { background: var(--p5-4) !important; color: #000; }
+
+        .prize-label { display: block; font-size: 0.8rem; margin-top: 8px; font-weight: normal; opacity: 0.9; }
+        .locked-msg { color: #ff3e3e; font-weight: bold; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <h2>春酒無線麥克風</h2>
-    
-    <div>
-        <label>輸入筆電上的 ID:</label><br>
-        <input type="text" id="target-id" placeholder="例如: 8a2b-...">
+
+<div class="header-fixed">
+    <div class="prize-nav">
+        <div class="control-group"><button id="btn1" class="btn-p active-p1" onclick="setPrize('1')">頭獎(1)</button><div class="btn-clear" onclick="clearSpecificPrize('1')">清除</div></div>
+        <div class="control-group"><button id="btn2" class="btn-p" onclick="setPrize('2')">二獎(5)</button><div class="btn-clear" onclick="clearSpecificPrize('2')">清除</div></div>
+        <div class="control-group"><button id="btn3" class="btn-p" onclick="setPrize('3')">三獎(10)</button><div class="btn-clear" onclick="clearSpecificPrize('3')">清除</div></div>
+        <div class="control-group"><button id="btn4" class="btn-p" onclick="setPrize('4')">四獎(21)</button><div class="btn-clear" onclick="clearSpecificPrize('4')">清除</div></div>
+        <div class="control-group"><button id="btn5-1" class="btn-p" onclick="setPrize('5-1')">五獎-1</button><div class="btn-clear" onclick="clearSpecificPrize('5-1')">清除</div></div>
+        <div class="control-group"><button id="btn5-2" class="btn-p" onclick="setPrize('5-2')">五獎-2</button><div class="btn-clear" onclick="clearSpecificPrize('5-2')">清除</div></div>
+        <div class="control-group"><button id="btn5-3" class="btn-p" onclick="setPrize('5-3')">五獎-3</button><div class="btn-clear" onclick="clearSpecificPrize('5-3')">清除</div></div>
+        <div class="control-group"><button id="btn5-4" class="btn-p" onclick="setPrize('5-4')">五獎-4</button><div class="btn-clear" onclick="clearSpecificPrize('5-4')">清除</div></div>
     </div>
 
-    <button id="connect-btn" onclick="connectToLaptop()">1. 連接筆電</button>
-    
-    <button id="mic-btn" onclick="toggleMic()" disabled>2. 開始收音 (Start)</button>
+    <button class="btn-all-clear" onclick="clearAllWinners()">⚠️ 一鍵清除所有中獎人</button>
 
-    <div id="current-text" style="font-size: 1.5rem; color: #FFD700; min-height: 50px;">...</div>
-    <div id="log">系統準備就緒</div>
+    <div class="search-area">
+        <input type="search" id="searchBox" placeholder="🔍 搜尋同仁姓名..." oninput="doSearch()">
+    </div>
+    <div class="stats-bar" id="statsDisplay">載入中...</div>
+</div>
 
-    <script>
-        const peer = new Peer();
-        let conn;
-        let recognition;
-        let isRecording = false;
+<div class="container" id="listArea"></div>
 
-        // 連接到筆電
-        function connectToLaptop() {
-            const targetId = document.getElementById('target-id').value;
-            if (!targetId) return alert("請輸入 ID");
+<script>
+    let currentKey = '1';
+    const prizeConfig = {
+        '1': { name: "頭獎", limit: 1, class: "win-p1" },
+        '2': { name: "二獎", limit: 5, class: "win-p2" },
+        '3': { name: "三獎", limit: 10, class: "win-p3" },
+        '4': { name: "四獎", limit: 21, class: "win-p4" },
+        '5-1': { name: "五獎-1", limit: 110, class: "win-p5-1" },
+        '5-2': { name: "五獎-2", limit: 110, class: "win-p5-2" },
+        '5-3': { name: "五獎-3", limit: 110, class: "win-p5-3" },
+        '5-4': { name: "五獎-4", limit: 110, class: "win-p5-4" }
+    };
 
-            document.getElementById('log').innerText = "正在連接...";
-            conn = peer.connect(targetId);
+    // 🚀 已移除指定 9 位同仁的名單
+    const fullData = [
+        {dept: "水泥製品廠1", names: ["許朝凱","侯建全","黃氏金石","莊温克","阮文實","吳寶珠","許斐僑","翁淑增","陳玉蘭","阮庭炳","梅德名","裴文光","潘輝成","宋欽旋","阮文草","黎文成","許振卿","王冠程","鄭樹森","阮文元","劉道力","何文新","阮友南","周文光","段文林","馬祥智","裴玉芳","朱育霖","王祥驊","阮因俊","林坤益","阮文斯","黃文雄","謝文水","蔡宛臻","陳華民","謝文萃","阮文安","阮文雄","莊富凱","廖浩翔","周文山","裴文榮","武輝通","馬志和","馬志清","黎文德","姚尚賢","何平定","謝春瓊","陳威宇","楊氏懷","陳盈瑋","阮光俊","阮伯榮","陶氏梅"]},
+        {dept: "砂石廠", names: ["蘇台生","張淳閔","同士現","謝文綠","龔怡如","陳秋旭","程安平"]},
+        {dept: "勞工安全衛生管理室", names: ["歐鴻偉"]},
+        {dept: "楠梓廠 品管", names: ["阮文山","阮文立","阮文強","阮惇全","黃俊淵","謝文正","王明賢","蘇中才","黃光東","高丹文","李漢昌","杜文廣","陸宥任","陳彥杰","莊雅筑","傅育蒼","曾啓榮","楊聖盟","杜文超","陳柏丞"]},
+        {dept: "楠梓廠 業務", names: ["陳秋鴻","許文宗","許進文","李宜鴻","沈依陵","蔡坤宇","蔡甄樺"]},
+        {dept: "楠梓廠 廠務", names: ["謝德亮","武文忠","陳香源","戴中山","林玉尉","林文生","黃增玲","朱恒儀","王雅婷","阮廷好","林偉崇","洪尚佑"]},
+        {dept: "楠梓廠 調度", names: ["王宏昇","陳帟羽","吳孟釗"]},
+        {dept: "楠梓廠 操作", names: ["許家豪"]},
+        {dept: "大增・佑豐", names: ["胡登程","董哲昆","盧銘芳","魏炎坤"]}
+    ];
 
-            conn.on('open', () => {
-                document.getElementById('log').innerText = "✅ 已連接到筆電！";
-                document.getElementById('connect-btn').style.display = 'none'; // 隱藏連接按鈕
-                document.getElementById('mic-btn').disabled = false; // 啟用麥克風按鈕
-                document.getElementById('mic-btn').style.background = '#28a745'; // 變綠色
-            });
+    const listArea = document.getElementById('listArea');
+    fullData.forEach(group => {
+        let sectionHtml = `<div class="dept-section"><h3 class="dept-title">${group.dept} (${group.names.length}人)</h3><ul class="name-grid">`;
+        group.names.forEach(name => {
+            sectionHtml += `<li><div class="name-card" onclick="handleToggle(this)"><span class="name-text">${name}</span><div class="prize-tag"></div></div></li>`;
+        });
+        sectionHtml += `</ul></div>`;
+        listArea.innerHTML += sectionHtml;
+    });
 
-            conn.on('error', (err) => alert("連線錯誤: " + err));
+    function setPrize(key) {
+        currentKey = key;
+        document.querySelectorAll('.btn-p').forEach(btn => btn.classList.remove('active-p1','active-p2','active-p3','active-p4','active-p5-1','active-p5-2','active-p5-3','active-p5-4'));
+        document.getElementById('btn'+key).classList.add('active-p'+key);
+        updateStats();
+    }
+
+    function handleToggle(el) {
+        const p = prizeConfig[currentKey];
+        const tag = el.querySelector('.prize-tag');
+        if (el.classList.contains(p.class)) {
+            el.className = 'name-card'; tag.innerHTML = ''; updateStats(); return;
         }
-
-        // 設定語音辨識
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'zh-TW';
-
-            recognition.onresult = (event) => {
-                let finalTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                        // 傳送最終結果給筆電
-                        if (conn && conn.open) {
-                            conn.send({ type: 'text', content: finalTranscript });
-                        }
-                        document.getElementById('current-text').innerText = finalTranscript;
-                    } else {
-                        // (選擇性) 傳送即時結果，看您是否希望筆電也即時跳動
-                         document.getElementById('current-text').innerText = event.results[i][0].transcript;
-                    }
-                }
-            };
-
-            // iOS Safari 防斷線機制
-            recognition.onend = () => {
-                if (isRecording) {
-                    console.log("重啟錄音...");
-                    recognition.start();
-                }
-            };
+        if (currentKey.startsWith('5')) {
+            if (document.querySelectorAll('[class*="win-p5-"]').length >= 110) { alert(`五獎總名額已滿！`); return; }
         } else {
-            alert("此瀏覽器不支援語音辨識 (請使用 Chrome 或 Safari)");
+            if (document.querySelectorAll(`.${p.class}`).length >= p.limit) { alert(`【${p.name}】名額已滿！`); return; }
         }
+        el.className = 'name-card win-card ' + p.class;
+        tag.innerHTML = `<span class="prize-label">★ ${p.name}</span>`;
+        updateStats();
+    }
 
-        // 切換麥克風
-        function toggleMic() {
-            if (!isRecording) {
-                recognition.start();
-                isRecording = true;
-                document.getElementById('mic-btn').innerText = "🔴 收音中 (點擊停止)";
-                document.getElementById('mic-btn').classList.add('recording');
-            } else {
-                recognition.stop();
-                isRecording = false;
-                document.getElementById('mic-btn').innerText = "2. 開始收音 (Start)";
-                document.getElementById('mic-btn').classList.remove('recording');
-            }
+    function clearSpecificPrize(key) {
+        const p = prizeConfig[key];
+        if (confirm(`確定清除所有【${p.name}】？`)) {
+            document.querySelectorAll(`.${p.class}`).forEach(el => {
+                el.className = 'name-card'; el.querySelector('.prize-tag').innerHTML = '';
+            });
+            updateStats();
         }
-    </script>
+    }
+
+    function clearAllWinners() {
+        if (confirm(`⚠️ 確定要重置系統，清空所有領獎紀錄嗎？`)) {
+            document.querySelectorAll('.name-card').forEach(el => {
+                el.className = 'name-card'; el.querySelector('.prize-tag').innerHTML = '';
+            });
+            updateStats();
+        }
+    }
+
+    function updateStats() {
+        const totalAwarded = document.querySelectorAll('.win-card').length;
+        const p5Awarded = document.querySelectorAll('[class*="win-p5-"]').length;
+        const p5Remain = 110 - p5Awarded; // 隨總人數調整
+        const currentCount = document.querySelectorAll(`.${prizeConfig[currentKey].class}`).length;
+        const statusEl = document.getElementById('statsDisplay');
+        let currentMsg = currentKey.startsWith('5') ? 
+            `五獎剩餘：<b class="${p5Remain <= 0 ? 'locked-msg' : ''}" style="${p5Remain <= 0 ? 'color:red' : ''}">${p5Remain <= 0 ? '已額滿' : p5Remain + ' 名'}</b>` :
+            `${prizeConfig[currentKey].name}剩餘：<b class="${(prizeConfig[currentKey].limit - currentCount) <= 0 ? 'locked-msg' : ''}" style="${(prizeConfig[currentKey].limit - currentCount) <= 0 ? 'color:red' : ''}">${(prizeConfig[currentKey].limit - currentCount) <= 0 ? '已額滿' : (prizeConfig[currentKey].limit - currentCount) + ' 名'}</b>`;
+        statusEl.innerHTML = `總進度：<b>${totalAwarded}</b>/110 | ${currentMsg}`;
+    }
+
+    function doSearch() {
+        const val = document.getElementById('searchBox').value.toLowerCase();
+        document.querySelectorAll('.name-card').forEach(card => {
+            card.parentElement.className = card.querySelector('.name-text').innerText.toLowerCase().includes(val) ? '' : 'hidden';
+        });
+    }
+    updateStats();
+</script>
 </body>
 </html>

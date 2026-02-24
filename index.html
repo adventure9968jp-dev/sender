@@ -263,7 +263,7 @@
                     ${p.name}
                     <div class="input-row">
                         <input type="number" class="num-input" value="${p.limit}" onclick="event.stopPropagation();" onchange="validateLimit('${key}', this, 'staff')">
-                        <input type="text" class="amt-input" value="${p.amt || ''}" placeholder="金額" onclick="event.stopPropagation();" onfocus="toPlain(this)" onblur="toFormat('${key}', this, 'staff')">
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" class="amt-input" value="${p.amt || ''}" placeholder="金額" onclick="event.stopPropagation();" onfocus="toPlain(this)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onblur="toFormat('${key}', this, 'staff')">
                     </div>
                 </button>
                 <div class="btn-clear" onclick="clearSpecificPrize('${key}', 'staff')">重設此獎</div>
@@ -294,7 +294,7 @@
                         <select class="num-select" onclick="event.stopPropagation();" onchange="validateLimit('${key}', this, 'vendor')">
                             ${limitOpts}
                         </select>
-                        <input type="text" class="amt-input" value="${p.amt || ''}" placeholder="金額" onclick="event.stopPropagation();" onfocus="toPlain(this)" onblur="toFormat('${key}', this, 'vendor')">
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" class="amt-input" value="${p.amt || ''}" placeholder="金額" onclick="event.stopPropagation();" onfocus="toPlain(this)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onblur="toFormat('${key}', this, 'vendor')">
                     </div>
                 </button>
                 <div class="btn-clear" onclick="clearSpecificPrize('${key}', 'vendor')">重設</div>
